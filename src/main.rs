@@ -14,7 +14,9 @@ use rocket_contrib::json::{Json, JsonValue};
 use serde::{Deserialize, Serialize};
 
 pub mod authentication;
+pub mod config;
 pub mod crypto;
+pub mod errors;
 pub mod models;
 pub mod schema;
 pub mod users;
@@ -30,7 +32,7 @@ fn index() -> &'static str {
 }
 
 fn main() {
-    rocket::ignite()
+    rocket::custom(config::from_env())
         .register(catchers![not_found])
         .mount(
             "/",
@@ -44,5 +46,6 @@ fn main() {
                 authentication::verify_token,
             ],
         )
+        .attach(models::Conn::fairing())
         .launch();
 }
