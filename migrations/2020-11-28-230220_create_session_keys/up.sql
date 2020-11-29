@@ -1,14 +1,14 @@
 create table session_keys
 (
-	id uuid not null,
+	id uuid not null default uuid_generate_v1(),
 	userId uuid not null
 		constraint session_keys_users_id_fk
 			references users
 				on delete cascade,
-	key varchar,
+	key varchar not null,
 	expiry timestamptz not null,
 	extended_at timestamptz,
-	created_at timestamptz not null
+	created_at timestamptz not null default current_timestamp
 );
 
 comment on column session_keys.expiry is 'When the session key will expire';

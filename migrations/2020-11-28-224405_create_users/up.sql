@@ -1,12 +1,14 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 create table users
 (
-	id uuid not null,
+	id uuid not null default uuid_generate_v1(),
 	email varchar not null,
 	password_hash varchar not null,
 	password_salt varchar not null,
 	fail_logins int default 0,
 	locked_until timestamptz,
-	created_at timestamptz not null
+	created_at timestamptz not null default current_timestamp
 );
 
 comment on column users.fail_logins is 'Number of fail login attempts';

@@ -2,7 +2,7 @@ table! {
     session_keys (id) {
         id -> Uuid,
         userid -> Uuid,
-        key -> Nullable<Varchar>,
+        key -> Varchar,
         expiry -> Timestamptz,
         extended_at -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
