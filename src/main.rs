@@ -7,10 +7,17 @@ extern crate rocket_contrib;
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate diesel_migrations;
 
+use rocket::fairing::AdHoc;
 use rocket::response::status;
 use rocket::Request;
+use rocket::Rocket;
 use rocket_contrib::json::{Json, JsonValue};
+use rocket_cors::Cors;
 use serde::{Deserialize, Serialize};
 
 pub mod authentication;
@@ -31,6 +38,10 @@ fn index() -> &'static str {
     "It works"
 }
 
+fn cors_fairing() -> Cors {
+    Cors::from_options(&Default::default()).expect("Cors fairing cannot be created")
+}
+
 fn main() {
     rocket::custom(config::from_env())
         .register(catchers![not_found])
@@ -47,5 +58,10 @@ fn main() {
             ],
         )
         .attach(models::Conn::fairing())
+        .attach(AdHoc::on_attach(
+            "Database Migrations",
+            models::run_db_migrations,
+        ))
+        .attach(cors_fairing())
         .launch();
 }

@@ -6,6 +6,7 @@ use chrono::{DateTime, Utc};
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use dotenv::dotenv;
+use rocket::Rocket;
 use rocket_contrib::databases::diesel;
 use std::env;
 use uuid::Uuid;
@@ -52,6 +53,22 @@ pub struct NewUser {
 
 #[database("diesel_postgres_pool")]
 pub struct Conn(diesel::PgConnection);
+
+// This macro from `diesel_migrations` defines an `embedded_migrations` module
+// containing a function named `run`. This allows the example to be run and
+// tested without any outside setup of the database.
+embed_migrations!();
+
+pub fn run_db_migrations(rocket: Rocket) -> Result<Rocket, Rocket> {
+    let conn = Conn::get_one(&rocket).expect("database connection");
+    match embedded_migrations::run(&*conn) {
+        Ok(()) => Ok(rocket),
+        Err(e) => {
+            error!("Failed to run database migrations: {:?}", e);
+            Err(rocket)
+        }
+    }
+}
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();

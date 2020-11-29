@@ -112,14 +112,8 @@ pub fn login(login: Json<Login>, conn: Conn) -> Result<JsonValue, RespError> {
     let hash = user.password_hash;
     let salt = user.password_salt;
     let cred_ok = match verify_password(&login.password, &hash, &salt) {
-        Ok(_) => {
-            println!("password ok");
-            true
-        }
-        Err(err) => {
-            println!("password not ok {:?}", err);
-            false
-        }
+        Ok(_) => true,
+        Err(_) => false,
     };
 
     if !cred_ok {
@@ -149,14 +143,24 @@ pub fn login(login: Json<Login>, conn: Conn) -> Result<JsonValue, RespError> {
 /// /logout handler
 #[delete("/logout", data = "<logout>")]
 pub fn logout(logout: Json<Logout>, conn: Conn) -> Result<status::NoContent, RespError> {
-    delete_session_key(&conn, logout.key_id)
-        .map(|_| status::NoContent)
-        .map_err(|err| match err {
-            _ => {
-                print!("Logout error: {:?}", err);
-                RespError::new(Status::BadRequest, Status::BadRequest.reason.to_string())
+    match delete_session_key(&conn, logout.key_id) {
+        Ok(n) => {
+            if n == 0 {
+                return Err(RespError::new(
+                    Status::BadRequest,
+                    Status::BadRequest.reason.to_string(),
+                ));
             }
-        })
+            Ok(status::NoContent)
+        }
+        Err(err) => {
+            print!("Logout error: {:?}", err);
+            Err(RespError::new(
+                Status::BadRequest,
+                Status::BadRequest.reason.to_string(),
+            ))
+        }
+    }
 }
 
 /// /forgot_password handler
