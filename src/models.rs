@@ -10,6 +10,9 @@ use rocket_contrib::databases::diesel;
 use std::env;
 use uuid::Uuid;
 
+// in minutes
+const SESSION_KEY_DURATION: i64 = 30;
+
 #[derive(Queryable)]
 pub struct SessionKey {
     pub id: Uuid,
@@ -80,7 +83,7 @@ pub fn new_session_key<'a>(
     userid: Uuid,
 ) -> Result<SessionKey, diesel::result::Error> {
     let key = gen_session_key().unwrap();
-    let expiry = chrono::offset::Utc::now() + Duration::minutes(10);
+    let expiry = chrono::offset::Utc::now() + Duration::minutes(SESSION_KEY_DURATION);
     let new_session = NewSessionKey {
         userid,
         key,
@@ -90,6 +93,23 @@ pub fn new_session_key<'a>(
     diesel::insert_into(session_keys::table)
         .values(&new_session)
         .get_result(conn)
+}
+
+pub fn extend_session_key<'a>(
+    conn: &PgConnection,
+    key_id: Uuid,
+) -> Result<usize, diesel::result::Error> {
+    let new_expiry = chrono::offset::Utc::now() + Duration::minutes(SESSION_KEY_DURATION);
+    diesel::update(session_keys::table.find(key_id))
+        .set(session_keys::expiry.eq(new_expiry))
+        .execute(conn)
+}
+
+pub fn delete_session_key<'a>(
+    conn: &PgConnection,
+    key_id: Uuid,
+) -> Result<usize, diesel::result::Error> {
+    diesel::delete(session_keys::table.find(key_id)).execute(conn)
 }
 
 pub fn get_user_by_email<'a>(

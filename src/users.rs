@@ -15,6 +15,7 @@ use crate::{
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind::*;
 use diesel::result::Error::DatabaseError;
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UserRegister {
@@ -29,15 +30,16 @@ pub struct Login {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Logout {
-    pub token: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
 pub struct ForgotPassword {
     pub email: String,
     #[serde(rename(deserialize = "recaptchaToken"))]
     pub recaptcha_token: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Logout {
+    #[serde(rename(deserialize = "keyId"))]
+    pub key_id: Uuid,
 }
 
 /// /register handler
@@ -145,11 +147,16 @@ pub fn login(login: Json<Login>, conn: Conn) -> Result<JsonValue, RespError> {
 }
 
 /// /logout handler
-#[delete("/logout")]
-pub fn logout() -> JsonValue {
-    json!({
-        "status": "ok"
-    })
+#[delete("/logout", data = "<logout>")]
+pub fn logout(logout: Json<Logout>, conn: Conn) -> Result<status::NoContent, RespError> {
+    delete_session_key(&conn, logout.key_id)
+        .map(|_| status::NoContent)
+        .map_err(|err| match err {
+            _ => {
+                print!("Logout error: {:?}", err);
+                RespError::new(Status::BadRequest, Status::BadRequest.reason.to_string())
+            }
+        })
 }
 
 /// /forgot_password handler

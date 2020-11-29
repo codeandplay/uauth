@@ -1,5 +1,8 @@
+use rocket::response::status;
 use rocket_contrib::json::{Json, JsonValue};
 use serde::{Deserialize, Serialize};
+
+use crate::{errors::RespError, models::Conn};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RefreshToken {
@@ -14,10 +17,27 @@ pub struct VerifyToken {
 
 /// /extend_token handler
 #[post("/extend_token", data = "<refresh_token>")]
-pub fn extend_token(refresh_token: Json<RefreshToken>) -> JsonValue {
-    json!({
-        "status": "ok"
-    })
+pub fn extend_token(
+    refresh_token: Json<RefreshToken>,
+    conn: Conn,
+) -> Result<status::NoContent, RespError> {
+    // Return session key.
+    //extend_token(&conn, user.id)
+    //    .map(|session| {
+    //        json!({
+    //            "sessionId": session.id,
+    //            "sessionKey":session.key,
+    //            "expiry": session.expiry.timestamp(),
+    //        })
+    //    })
+    //    .map_err(|err| match err {
+    //        _ => {
+    //            print!("Login error: {:?}", err);
+    //            RespError::new(Status::BadRequest, Status::BadRequest.reason.to_string())
+    //        }
+    //    })
+
+    Ok(status::NoContent)
 }
 
 /// verify_token handler
